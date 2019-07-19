@@ -1,4 +1,4 @@
-#include "jisho/jisho.hpp"
+#include "jisho/definition.hpp"
 
 namespace jisho {
 std::string jisho_api = "https://jisho.org/";
@@ -58,18 +58,18 @@ std::ostream& operator<<(std::ostream& stream, const definition& definition) {
             stream << sense.pos().back() << "\n";
         }
         else {
-            stream << "(unknown)\n";
+            stream << "<unknown>\n";
         }
 
         stream << "    ";
         if (sense.def().size()) {
             for (std::size_t ix = 0; ix < sense.def().size() - 1; ++ix) {
-                stream << sense.def()[ix] << ';';
+                stream << sense.def()[ix] << "; ";
             }
             stream << sense.def().back() << "\n";
         }
         else {
-            stream << "(unknown)\n";
+            stream << "<unknown>\n";
         }
     }
 

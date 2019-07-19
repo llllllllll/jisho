@@ -59,6 +59,7 @@ public:
         }
     };
 
+    definition() = default;
     definition(const pt::ptree& api_result);
 
 private:
