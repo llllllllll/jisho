@@ -1,0 +1,34 @@
+*~
+
+# Mac OSX folder properties
+.DS_Store
+
+# doc artifacts
+html/*
+docs/doxygen-build/*
+docs/build/*
+
+# scratch file for testing linking
+scratch.cc
+a.out
+
+# compiled artifacts
+build/*
+*.o
+*.a
+*.so*
+
+# gcc header dependencies
+*.d
+
+# coverage artifacts
+*.gcov
+*.gcno
+*.gcda
+
+# etags
+TAGS
+
+.gdb_history
+
+*.pyc
