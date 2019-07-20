@@ -12,7 +12,11 @@
 namespace jisho {
 namespace pt = boost::property_tree;
 
-extern std::string jisho_api;
+/** Set the jisho API server root path to a new string.
+
+    @param api_root The new api root to set. This will be copied.
+*/
+void set_api_root(const std::string_view& api_root);
 
 enum class jlpt : char {
     n5 = (1 << 5),
@@ -59,7 +63,6 @@ public:
         }
     };
 
-    definition() = default;
     definition(const pt::ptree& api_result);
 
 private:
@@ -115,6 +118,13 @@ public:
         return m_is_common;
     }
 
+    /** Format a definition as a CSV row. This does not write a newline.
+
+        @param stream The stream to write the single row to.
+        @param delim The field delimiter.
+    */
+    std::ostream& csv_row(std::ostream& stream, char delim) const;
+
 private:
     std::string m_word;
     std::string m_reading;
@@ -124,4 +134,14 @@ private:
 };
 
 std::ostream& operator<<(std::ostream& stream, const definition& definition);
+
+/** Format a csv from a collection of definitions.
+
+    @param stream The stream to write to.
+    @param definitions The definitions to write.
+    @param field_delim The field delimiter.
+*/
+std::ostream& write_csv(std::ostream& stream,
+                        const std::vector<definition>& definitions,
+                        char field_delim);
 }  // namespace jisho

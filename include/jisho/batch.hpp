@@ -1,6 +1,7 @@
 #pragma once
 
 #include <exception>
+#include <optional>
 #include <thread>
 #include <vector>
 
@@ -14,8 +15,8 @@ namespace jisho {
     @return The definition for each word in the order it appears in `words`.
  */
 template<typename string_type>
-std::vector<definition> fetch_batch(const std::vector<string_type>& words) {
-    std::vector<definition> out(words.size());
+std::vector<std::optional<definition>> fetch_batch(const std::vector<string_type>& words) {
+    std::vector<std::optional<definition>> out(words.size());
 
     std::vector<std::exception_ptr> exc;
     std::vector<std::thread> threads;
@@ -24,6 +25,9 @@ std::vector<definition> fetch_batch(const std::vector<string_type>& words) {
         threads.emplace_back([&out, ix, &word, &exc]() {
             try {
                 out[ix] = definition(curl::session{}, word);
+            }
+            catch (const jisho::error&) {
+                // ignore
             }
             catch (const std::exception&) {
                 exc.emplace_back(std::current_exception());

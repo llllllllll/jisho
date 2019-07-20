@@ -1,0 +1,7 @@
+#!/bin/sh -e
+
+if [ -z "$JISHO_WORD_GRABBER_FILE" ];then
+    JISHO_WORD_GRABBER_FILE=~/jisho-word-grabber.csv
+fi
+
+jisho "`xclip -o -selection primary`" --csv >> $JISHO_WORD_GRABBER_FILE
