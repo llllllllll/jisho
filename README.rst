@@ -11,21 +11,21 @@ The ``jisho`` utility can be used to search for one or more words from the comma
 .. code-block::
 
    $ ./jisho テスト
-   テスト(テスト)
+   テスト(テスト); jlpt={n5}; common
      Noun, Suru verb
        test
      Wikipedia definition
        Test
 
    $ ./jisho 漢字
-   漢字(かんじ)
+   漢字(かんじ); jlpt={n5}; common
      Noun
        Chinese characters; kanji
      Wikipedia definition
        Chinese characters
 
    $ ./jisho romaji
-   ローマ字(ローマじ)
+   ローマ字(ローマじ); jlpt={n2, n1}; common
      Noun
        Latin alphabet; Roman alphabet
      Noun
@@ -34,13 +34,12 @@ The ``jisho`` utility can be used to search for one or more words from the comma
        Romanization of Japanese
 
    $ ./jisho 複数 言葉
-   複数(ふくすう)
+   複数(ふくすう); jlpt={n2}; common
      No-adjective, Noun
        plural; multiple; several
      Wikipedia definition
        Plural
-
-   言葉(ことば)
+   言葉(ことば); jlpt={n5}; common
      Noun
        language; dialect
      Noun
@@ -51,6 +50,33 @@ The ``jisho`` utility can be used to search for one or more words from the comma
        learning to speak; language acquisition
      Wikipedia definition
        Ci (poetry)
+
+sqlite
+~~~~~~
+
+``jisho`` can store words that it looks up in a local sqlite database.
+This feature is designed to help build a local database of words searched to be exported to a flashcard program like `anki <https://github.com/dae/anki>`__.
+
+First, a new database needs to be initialized using:
+
+.. code-block::
+
+   $ jisho --sqlite-db-init /path/to/db
+
+This will create a new database with two tables:
+
+- ``words``
+- ``senses``
+
+These tables can be joined ``on words.word = senses.word`` to get all of the senses for a given word.
+
+To write a word or words to an initialized sqlite database, use:
+
+.. code-block::
+
+   $ jish --sqlite WORDS TO SEARCH
+
+Words that fail to resolve will be skipped as will words that are already in the database.
 
 CSV
 ~~~
@@ -81,7 +107,7 @@ Word Grabber
 To facilitate quickly searching words to be added as a flashcard, ``jisho`` includes a tool called the ``jisho-word-grabber``.
 The word grabber is designed to make it easy to collect words while reading.
 
-``jisho-word-grabber`` searches the currently selected word and adds it as a new row to a CSV stored at ``JISHO_WORD_GRABBER_FILE``, which defaults to ``~/jisho-word-grabber.csv``.
+``jisho-word-grabber`` searches the currently selected word and adds it to a sqlite database stored at ``JISHO_WORD_GRABBER_FILE``, which defaults to ``~/.jisho-word-grabber.sqlite``.
 
 ``jisho-word-grabber`` is meant to be bound to a hotkey, for example, ``M-\```.
 Using a hotkey makes it minimally intrusive to add new words to a flashcard deck, making it more likely new words will get added.
@@ -96,6 +122,7 @@ Building
 - curl (http requests)
 - Boost.Program_options (CLI argument parsing)
 - Boost.PropertyTree (JSON parsing)
+- sqlite (sqlite storage for words)
 
 ``jisho`` is build with ``CMake``.
 To build, run the following:

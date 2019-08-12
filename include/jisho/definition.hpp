@@ -8,6 +8,7 @@
 #include <boost/property_tree/ptree.hpp>
 
 #include "jisho/curl.hpp"
+#include "jisho/sqlite.hpp"
 
 namespace jisho {
 namespace pt = boost::property_tree;
@@ -18,7 +19,7 @@ namespace pt = boost::property_tree;
 */
 void set_api_root(const std::string_view& api_root);
 
-enum class jlpt : char {
+enum class jlpt : std::uint8_t {
     n5 = (1 << 5),
     n4 = (1 << 4),
     n3 = (1 << 3),
@@ -37,6 +38,7 @@ public:
     private:
         std::vector<std::string> m_pos;
         std::vector<std::string> m_def;
+        bool m_usually_written_using_kana_alone;
 
     protected:
         friend definition;
@@ -54,6 +56,13 @@ public:
         }
 
     public:
+        inline sense(bool ussually_written_using_kana_alone)
+            : m_usually_written_using_kana_alone(ussually_written_using_kana_alone) {}
+
+        inline bool usually_written_using_kana_alone() const {
+            return m_usually_written_using_kana_alone;
+        }
+
         inline const std::vector<std::string> pos() const {
             return m_pos;
         }
@@ -90,7 +99,7 @@ public:
         return m_senses;
     }
 
-    inline int jlpt_mask() const {
+    inline std::uint8_t jlpt_mask() const {
         return m_jlpt_mask;
     }
 
@@ -129,7 +138,7 @@ private:
     std::string m_word;
     std::string m_reading;
     std::vector<sense> m_senses;
-    char m_jlpt_mask;
+    std::uint8_t m_jlpt_mask;
     bool m_is_common;
 };
 
@@ -144,4 +153,18 @@ std::ostream& operator<<(std::ostream& stream, const definition& definition);
 std::ostream& write_csv(std::ostream& stream,
                         const std::vector<definition>& definitions,
                         char field_delim);
+
+/** Fill in the schema for a sqlite words database.
+
+    @param db The database to write to.
+*/
+void populate_sqlite_schema(const std::shared_ptr<sqlite::conn>& db);
+
+/** Write definitions to a sqlite database.
+
+    @param db The database to write to.
+    @param definitions The definitions to write.
+*/
+void write_sqlite(const std::shared_ptr<sqlite::conn>& db,
+                  const std::vector<definition>& definitions);
 }  // namespace jisho

@@ -1,4 +1,5 @@
 #include "jisho/definition.hpp"
+#include "jisho/map.hpp"
 
 namespace jisho {
 namespace {
@@ -24,6 +25,71 @@ pt::ptree definition::fetch_word(const curl::session& session,
     return response;
 }
 
+namespace {
+template<typename T, typename C>
+std::ostream& intersperse(std::ostream& stream, const T& sep, const C& container) {
+    auto it = container.begin();
+    auto end = container.end();
+    if (it == end) {
+        return stream;
+    }
+
+    stream << *it;
+    ++it;
+    for (; it != end; ++it) {
+        stream << sep << *it;
+    }
+    return stream;
+}
+
+std::array<std::pair<jlpt, std::string_view>, 5> jlpt_parse_strings = {{
+    {jlpt::n5, "jlpt-n5"},
+    {jlpt::n4, "jlpt-n4"},
+    {jlpt::n3, "jlpt-n3"},
+    {jlpt::n2, "jlpt-n2"},
+    {jlpt::n1, "jlpt-n1"},
+}};
+
+std::uint8_t parse_jlpt_mask(const pt::ptree& tags) {
+    std::uint8_t out = 0;
+    for (const auto& [_, entry] : tags) {
+        const std::string& as_str = entry.get<std::string>("");
+
+        bool parsed = false;
+        for (const auto& [mask, parse_str] : jlpt_parse_strings) {
+            if (as_str == parse_str) {
+                out |= static_cast<std::uint8_t>(mask);
+                parsed = true;
+            }
+        }
+        if (!parsed) {
+            std::stringstream ss;
+            ss << "unknown jlpt level string " << as_str << ", valid options are: "
+               << "{";
+            intersperse(ss, ", ", util::map(jlpt_parse_strings, [](const auto& p) {
+                            return p.second;
+                        }));
+            ss << '}';
+            throw std::runtime_error(ss.str());
+        }
+    }
+    return out;
+}
+
+std::string usually_written_using_kana_alone = "Usually written using kana alone";
+
+bool parse_usually_written_using_kana_alone(const pt::ptree& tags) {
+    for (const auto& [_, entry] : tags) {
+        const std::string& as_str = entry.get<std::string>("");
+
+        if (as_str == usually_written_using_kana_alone) {
+            return true;
+        }
+    }
+    return false;
+}
+}  // namespace
+
 definition::definition(const pt::ptree& response) {
     pt::ptree data = response.get_child("data");
     if (!data.size()) {
@@ -34,10 +100,12 @@ definition::definition(const pt::ptree& response) {
     m_word = entry.get<std::string>("slug");
     m_is_common = entry.get<bool>("is_common");
     m_reading = entry.get<std::string>("japanese..reading");
+    m_jlpt_mask = parse_jlpt_mask(entry.get_child("jlpt"));
 
     std::vector<std::string> pos;
     for (const auto& pt_sense : entry.get_child("senses")) {
-        definition::sense& sense = m_senses.emplace_back();
+        definition::sense& sense = m_senses.emplace_back(
+            parse_usually_written_using_kana_alone(pt_sense.second.get_child("tags")));
 
         for (const auto& def : pt_sense.second.get_child("english_definitions")) {
             sense.add_def(def.second.get<std::string>(""));
@@ -109,30 +177,50 @@ std::ostream& definition::csv_row(std::ostream& stream, char delim) const {
     return stream;
 }
 
+namespace {
+std::array<std::pair<jlpt, std::string_view>, 5> jlpt_formats = {{{jlpt::n5, "n5"},
+                                                                  {jlpt::n4, "n4"},
+                                                                  {jlpt::n3, "n3"},
+                                                                  {jlpt::n2, "n2"},
+                                                                  {jlpt::n1, "n1"}}};
+}
+
 std::ostream& operator<<(std::ostream& stream, const definition& definition) {
-    stream << definition.word() << "(" << definition.reading() << ")\n";
+    stream << definition.word() << '(' << definition.reading() << ')';
+    if (definition.jlpt_mask()) {
+        std::vector<std::string_view> strings;
+        for (const auto& [level, str] : jlpt_formats) {
+            if (definition.jlpt_mask() & static_cast<std::uint8_t>(level)) {
+                strings.emplace_back(str);
+            }
+        }
+        stream << "; jlpt={";
+        intersperse(stream, ", ", strings);
+        stream << '}';
+    }
+    if (definition.is_common()) {
+        stream << "; common";
+    }
 
     for (const definition::sense& sense : definition.senses()) {
-        std::cout << "  ";
+        stream << "\n  ";
         if (sense.pos().size()) {
-            for (std::size_t ix = 0; ix < sense.pos().size() - 1; ++ix) {
-                stream << sense.pos()[ix] << ", ";
-            }
-            stream << sense.pos().back() << "\n";
+            intersperse(stream, ", ", sense.pos());
         }
         else {
-            stream << "<unknown>\n";
+            stream << "<unknown>";
         }
+        if (sense.usually_written_using_kana_alone()) {
+            stream << " (usually written using kana alone)";
+        }
+        stream << '\n';
 
         stream << "    ";
         if (sense.def().size()) {
-            for (std::size_t ix = 0; ix < sense.def().size() - 1; ++ix) {
-                stream << sense.def()[ix] << "; ";
-            }
-            stream << sense.def().back() << "\n";
+            intersperse(stream, "; ", sense.def());
         }
         else {
-            stream << "<unknown>\n";
+            stream << "<unknown>";
         }
     }
 
@@ -146,5 +234,70 @@ std::ostream& write_csv(std::ostream& stream,
         definition.csv_row(stream, field_delim) << '\n';
     }
     return stream;
+}
+
+namespace {
+template<typename C>
+void make_table(const std::shared_ptr<sqlite::conn>& db,
+                const std::string_view& name,
+                const C& columns) {
+    std::stringstream ss;
+    ss << "create table " << name << " (";
+    intersperse(ss, ", ", util::map(columns, [](const auto& p) {
+                    std::string col(p[0]);
+                    col += ' ';
+                    col += p[1];
+                    col += p[2];
+                    return col;
+                }));
+    ss << ')';
+    db->exec(ss.str());
+}
+}  // namespace
+
+void populate_sqlite_schema(const std::shared_ptr<sqlite::conn>& db) {
+    std::array<std::array<std::string_view, 3>, 4> words_columns = {{
+        {"word", "text", " primary key"},
+        {"reading", "text", ""},
+        {"jlpt_mask", "integer", ""},
+        {"is_common", "boolean", ""},
+    }};
+    make_table(db, "words", words_columns);
+
+    std::array<std::array<std::string_view, 3>, 3> senses_columns = {{
+        {"word", "text"},
+        {"pos", "text"},
+        {"def", "text"},
+    }};
+    make_table(db, "senses", senses_columns);
+}
+
+void write_sqlite(const std::shared_ptr<sqlite::conn>& db,
+                  const std::vector<definition>& definitions) {
+    auto words_statement = db->statement(
+        "insert or ignore into words values (?, ?, ?, ?)");
+    auto senses_statement = db->statement(
+        "insert or ignore into senses values (?, ?, ?)");
+
+    for (const definition& def : definitions) {
+        words_statement->reset();
+        words_statement->bind(1, def.word());
+        words_statement->bind(2, def.reading());
+        words_statement->bind<int>(3, def.jlpt_mask());
+        words_statement->bind(4, def.is_common());
+        words_statement->step();
+
+        for (const definition::sense& sense : def.senses()) {
+            senses_statement->reset();
+            senses_statement->bind(1, def.word());
+            std::stringstream pos;
+            intersperse(pos, ", ", sense.pos());
+            senses_statement->bind(2, pos.str());
+            std::stringstream def;
+            intersperse(def, "; ", sense.def());
+            senses_statement->bind(3, def.str());
+            senses_statement->step();
+        }
+    }
 }
 }  // namespace jisho

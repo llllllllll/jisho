@@ -7,8 +7,22 @@
 
 #include "jisho/batch.hpp"
 #include "jisho/definition.hpp"
+#include "jisho/sqlite.hpp"
 
 namespace po = boost::program_options;
+
+namespace {
+template<typename T>
+std::vector<T> remove_missing(const std::vector<std::optional<T>>& es) {
+    std::vector<T> out;
+    for (const auto& e : es) {
+        if (e) {
+            out.emplace_back(*e);
+        }
+    }
+    return out;
+}
+}  // namespace
 
 int main(int argc, char** argv) {
     // clang-format off
@@ -20,6 +34,8 @@ int main(int argc, char** argv) {
         ("csv", "format the output as a csv")
         ("csv-field-delim", po::value<char>()->default_value('\t'),
          "csv field delimiter, default to tab (for anki)")
+        ("sqlite", po::value<std::string>(), "write the words to a sqlite database")
+        ("sqlite-db-init", po::value<std::string>(), "initialize a sqlite database")
         ;
     // clang-format on
 
@@ -61,13 +77,19 @@ int main(int argc, char** argv) {
     }
 
     if (vm.count("csv")) {
-        std::vector<jisho::definition> valid_definitions;
-        for (std::optional<jisho::definition>& maybe : definitions) {
-            if (maybe) {
-                valid_definitions.emplace_back(std::move(*maybe));
-            }
-        }
-        jisho::write_csv(std::cout, valid_definitions, vm["csv-field-delim"].as<char>());
+        jisho::write_csv(std::cout,
+                         remove_missing(definitions),
+                         vm["csv-field-delim"].as<char>());
+    }
+    else if (vm.count("sqlite-db-init")) {
+        const std::string& db_path = vm["sqlite-db-init"].as<std::string>();
+        auto db = jisho::sqlite::conn::make(db_path);
+        jisho::populate_sqlite_schema(db);
+    }
+    else if (vm.count("sqlite")) {
+        const std::string& db_path = vm["sqlite"].as<std::string>();
+        auto db = jisho::sqlite::conn::make(db_path);
+        jisho::write_sqlite(db, remove_missing(definitions));
     }
     else {
         std::size_t ix = 0;
