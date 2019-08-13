@@ -82,6 +82,11 @@ struct bind_helper<bool> {
 };
 }  // namespace detail
 
+class constraint_violated : public std::runtime_error {
+public:
+    inline constraint_violated() : std::runtime_error("constraint violated") {}
+};
+
 /** A managed sqlite3 statement.
  */
 class stmt : public std::enable_shared_from_this<stmt> {

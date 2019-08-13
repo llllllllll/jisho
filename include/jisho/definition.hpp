@@ -56,8 +56,8 @@ public:
         }
 
     public:
-        inline sense(bool ussually_written_using_kana_alone)
-            : m_usually_written_using_kana_alone(ussually_written_using_kana_alone) {}
+        inline sense(bool usually_written_using_kana_alone)
+            : m_usually_written_using_kana_alone(usually_written_using_kana_alone) {}
 
         inline bool usually_written_using_kana_alone() const {
             return m_usually_written_using_kana_alone;

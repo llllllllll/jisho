@@ -264,20 +264,19 @@ void populate_sqlite_schema(const std::shared_ptr<sqlite::conn>& db) {
     }};
     make_table(db, "words", words_columns);
 
-    std::array<std::array<std::string_view, 3>, 3> senses_columns = {{
+    std::array<std::array<std::string_view, 3>, 4> senses_columns = {{
         {"word", "text"},
         {"pos", "text"},
         {"def", "text"},
+        {"usually_written_using_kana_alone", "boolean"},
     }};
     make_table(db, "senses", senses_columns);
 }
 
 void write_sqlite(const std::shared_ptr<sqlite::conn>& db,
                   const std::vector<definition>& definitions) {
-    auto words_statement = db->statement(
-        "insert or ignore into words values (?, ?, ?, ?)");
-    auto senses_statement = db->statement(
-        "insert or ignore into senses values (?, ?, ?)");
+    auto words_statement = db->statement("insert into words values (?, ?, ?, ?)");
+    auto senses_statement = db->statement("insert into senses values (?, ?, ?, ?)");
 
     for (const definition& def : definitions) {
         words_statement->reset();
@@ -285,7 +284,12 @@ void write_sqlite(const std::shared_ptr<sqlite::conn>& db,
         words_statement->bind(2, def.reading());
         words_statement->bind<int>(3, def.jlpt_mask());
         words_statement->bind(4, def.is_common());
-        words_statement->step();
+        try {
+            words_statement->step();
+        }
+        catch (const sqlite::constraint_violated&) {
+            continue;
+        }
 
         for (const definition::sense& sense : def.senses()) {
             senses_statement->reset();
@@ -296,6 +300,7 @@ void write_sqlite(const std::shared_ptr<sqlite::conn>& db,
             std::stringstream def;
             intersperse(def, "; ", sense.def());
             senses_statement->bind(3, def.str());
+            senses_statement->bind(4, sense.usually_written_using_kana_alone());
             senses_statement->step();
         }
     }

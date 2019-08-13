@@ -37,18 +37,16 @@ void conn::exec(const std::string& sql) {
 }
 
 void stmt::reset() {
-    int res = sqlite3_reset(m_underlying);
-    if (res != SQLITE_OK) {
-        std::stringstream ss;
-        ss << "failed to stereset\nreason: " << sqlite3_errstr(res);
-        throw std::runtime_error{ss.str()};
-        throw std::runtime_error{"failed to reset"};
-    }
+    sqlite3_reset(m_underlying);
 }
 
 bool stmt::step() {
     int res = sqlite3_step(m_underlying);
     if (!(res == SQLITE_DONE || res == SQLITE_ROW)) {
+        if (res == SQLITE_CONSTRAINT) {
+            throw constraint_violated{};
+        }
+
         std::stringstream ss;
         ss << "failed to step\nreason: " << sqlite3_errstr(res);
         throw std::runtime_error{ss.str()};
