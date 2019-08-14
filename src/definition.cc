@@ -96,10 +96,26 @@ definition::definition(const pt::ptree& response) {
         throw error("no data member in response");
     }
     pt::ptree entry = data.front().second;
+    pt::ptree japanese = entry.get_child("japanese");
+    if (japanese.size()) {
+        japanese = japanese.front().second;
+    }
 
-    m_word = entry.get<std::string>("slug");
-    m_is_common = entry.get<bool>("is_common");
-    m_reading = entry.get<std::string>("japanese..reading");
+    if (japanese.count("word")) {
+        m_word = japanese.get<std::string>("word");
+    }
+    else {
+        m_word = entry.get<std::string>("slug");
+    }
+    if (entry.count("is_common")) {
+        m_is_common = entry.get<bool>("is_common");
+    }
+    else {
+        m_is_common = false;
+    }
+    if (japanese.count("reading")) {
+        m_reading = japanese.get<std::string>("reading");
+    }
     m_jlpt_mask = parse_jlpt_mask(entry.get_child("jlpt"));
 
     std::vector<std::string> pos;

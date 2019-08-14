@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
         ("csv-field-delim", po::value<char>()->default_value('\t'),
          "csv field delimiter, default to tab (for anki)")
         ("sqlite", po::value<std::string>(), "write the words to a sqlite database")
-        ("no-stdout", po::value<std::string>(), "don't write the output to stdout")
+        ("no-stdout", "don't write the output to stdout")
         ("sqlite-db-init", po::value<std::string>(), "initialize a sqlite database")
         ;
     // clang-format on
@@ -77,12 +77,7 @@ int main(int argc, char** argv) {
         definitions = jisho::fetch_batch(words);
     }
 
-    if (vm.count("csv")) {
-        jisho::write_csv(std::cout,
-                         remove_missing(definitions),
-                         vm["csv-field-delim"].as<char>());
-    }
-    else if (vm.count("sqlite-db-init")) {
+    if (vm.count("sqlite-db-init")) {
         const std::string& db_path = vm["sqlite-db-init"].as<std::string>();
         auto db = jisho::sqlite::conn::make(db_path);
         jisho::populate_sqlite_schema(db);
@@ -94,15 +89,22 @@ int main(int argc, char** argv) {
     }
 
     if (!vm.count("no-stdout")) {
-        std::size_t ix = 0;
-        for (const std::optional<jisho::definition>& definition : definitions) {
-            if (definition) {
-                std::cout << *definition << '\n';
+        if (vm.count("csv")) {
+            jisho::write_csv(std::cout,
+                             remove_missing(definitions),
+                             vm["csv-field-delim"].as<char>());
+        }
+        else {
+            std::size_t ix = 0;
+            for (const std::optional<jisho::definition>& definition : definitions) {
+                if (definition) {
+                    std::cout << *definition << '\n';
+                }
+                else {
+                    std::cout << "no definition for: " << words[ix] << '\n';
+                }
+                ++ix;
             }
-            else {
-                std::cout << "no definition for: " << words[ix] << '\n';
-            }
-            ++ix;
         }
     }
 
