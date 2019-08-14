@@ -35,6 +35,7 @@ int main(int argc, char** argv) {
         ("csv-field-delim", po::value<char>()->default_value('\t'),
          "csv field delimiter, default to tab (for anki)")
         ("sqlite", po::value<std::string>(), "write the words to a sqlite database")
+        ("no-stdout", po::value<std::string>(), "don't write the output to stdout")
         ("sqlite-db-init", po::value<std::string>(), "initialize a sqlite database")
         ;
     // clang-format on
@@ -91,7 +92,8 @@ int main(int argc, char** argv) {
         auto db = jisho::sqlite::conn::make(db_path);
         jisho::write_sqlite(db, remove_missing(definitions));
     }
-    else {
+
+    if (!vm.count("no-stdout")) {
         std::size_t ix = 0;
         for (const std::optional<jisho::definition>& definition : definitions) {
             if (definition) {

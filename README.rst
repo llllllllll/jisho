@@ -78,6 +78,9 @@ To write a word or words to an initialized sqlite database, use:
 
 Words that fail to resolve will be skipped as will words that are already in the database.
 
+By default, words will still be printed to stdout.
+To disable writing the definitions to stdout, and only write the words to the sqlite database, the ``--no-stdout`` flag may be passed.
+
 CSV
 ~~~
 
@@ -104,15 +107,20 @@ By default, the delimiter is a tab character to match anki's preferences, though
 Word Grabber
 ~~~~~~~~~~~~
 
-To facilitate quickly searching words to be added as a flashcard, ``jisho`` includes a tool called the ``jisho-word-grabber``.
-The word grabber is designed to make it easy to collect words while reading.
+To facilitate quickly searching words, ``jisho`` includes a tool called the ``jisho-word-grabber``.
+The word grabber is designed to make it easy to look up words and add them to a flashcard deck.
 
-``jisho-word-grabber`` searches the currently selected word and adds it to a sqlite database stored at ``JISHO_WORD_GRABBER_FILE``, which defaults to ``~/.jisho-word-grabber.sqlite``.
+``jish-word-grabber`` searches the currently selected (highlighted) text and displays the definition(s) at the top of the screen.
+``jisho-word-grabber`` also adds the selected to a sqlite database stored at ``JISHO_WORD_GRABBER_FILE``, which defaults to ``~/.jisho-word-grabber.sqlite``.
 
 ``jisho-word-grabber`` is meant to be bound to a hotkey, for example, ``M-\```.
-Using a hotkey makes it minimally intrusive to add new words to a flashcard deck, making it more likely new words will get added.
+Using a hotkey makes it minimally intrusive to search for and add new words to a flashcard deck, making it more likely new words will get added.
 
-Currently ``jisho-word-grabber`` only works on GNU+Linux and requires ``xclip``.
+Currently ``jisho-word-grabber`` only works on GNU+Linux and has the following additional runtime dependencies:
+
+- xclip (retrieving the selected text)
+- dmenu (displaying the definitions)
+- bash (used to script ``jisho``, xclip, and dmenu)
 
 Building
 --------

@@ -1,7 +1,31 @@
-#!/bin/sh -e
+#!/bin/bash -e
 
 if [ -z "$JISHO_WORD_GRABBER_FILE" ];then
     JISHO_WORD_GRABBER_FILE=~/.jisho-word-grabber.sqlite
 fi
 
-jisho "`xclip -o -selection primary`" --sqlite $JISHO_WORD_GRABBER_FILE
+strip() {
+    echo $1 | sed "s/^[ \t]*//"
+}
+
+selection="$(xclip -o -selection primary)"
+IFS=$'\n'
+result=($(jisho "$selection" --sqlite $JISHO_WORD_GRABBER_FILE))
+if [ "${result[0]}" == "no definition for: $selection" ];then
+    options="done"
+else
+    options=""
+    size=`expr \( ${#result[@]} - 1 \) / 2`
+    for n in `seq $size`;do
+        ix=`expr $n \* 2 - 1`
+        pos="$(strip "${result[$ix]}")"
+        def="$(strip "${result[`expr 1 + $ix`]}")"
+        if [ $n == $size ];then
+            nl=''
+        else
+            nl='\n'
+        fi
+        options+="$pos: $def$nl"
+    done
+fi
+echo -e $options | dmenu -p "${result[0]}" -fn 'Droid Sans Mono-20' -l 20
