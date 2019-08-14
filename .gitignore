@@ -32,3 +32,6 @@ TAGS
 .gdb_history
 
 *.pyc
+
+# manually add any files you need in here
+package/arch-linux/*

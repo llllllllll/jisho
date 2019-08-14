@@ -1,0 +1,33 @@
+# Maintainer: Joe Jevnik <joejev@gmail.com>
+
+pkgname=jisho
+pkgver=master
+pkgrel=1
+pkgdesc="Tools for interacting with https://jisho.org/."
+arch=('i686' 'x86_64')
+url="https://www.github.com/llllllllll/jisho"
+license=('Boost')
+depends=('boost-libs' 'xclip' 'dmenu' 'sqlite')
+makedepends=('boost' 'gcc')
+source=("https://codeload.github.com/llllllllll/${pkgname}/tar.gz/master")
+md5sums=(SKIP)
+
+prepare() {
+  cd ${pkgname}-${pkgver}
+}
+
+build() {
+    cd ${pkgname}-${pkgver}
+    mkdir build
+    cd build
+    cmake -DCMAKE_BUILD_TYPE=Release ..
+    make -j2
+}
+
+package() {
+  cd ${pkgname}-${pkgver}
+
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm755 build/jisho "$pkgdir/usr/bin/jisho"
+  install -Dm755 bin/word-grabber/gnu-linux "$pkgdir/usr/bin/jisho-word-grabber"
+}
