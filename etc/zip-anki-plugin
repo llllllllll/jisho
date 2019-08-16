@@ -1,0 +1,5 @@
+#!/bin/bash
+
+pushd anki
+zip -r ../jisho-sqlite-importer.ankiaddon *
+popd

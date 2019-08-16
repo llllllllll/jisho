@@ -122,6 +122,47 @@ Currently ``jisho-word-grabber`` only works on GNU+Linux and has the following a
 - dmenu (displaying the definitions)
 - bash (used to script ``jisho``, xclip, and dmenu)
 
+Anki Plugin
+-----------
+
+``jisho`` has an `anki <https://github.com/dae/anki>`__ plugin for bulk importing words from a ``jisho`` formatted sqlite file.
+
+Each card will be formatted like:
+
+.. image:: media/card-example.png
+
+Everything below the horizontal line only appears on the back of the card.
+
+Install
+~~~~~~~
+
+To install the ``jisho`` anki plugin, run the following command from the repo root:
+
+.. code-block::
+
+   $ ./etc/zip-anki-plugin
+
+This will create a file called: ``jisho-sqlite-importer.ankiaddon``.
+Next, open the anki application and go to Tools > Add-ons.
+On the right side of the window, select "Install from file...".
+Navigate to the ``jisho`` repo root and select the ``jisho-sqlite-importer.ankiaddon`` file.
+Next, and this step cannot be skipped, restart anki.
+Finally, to add new cards, select the deck you want to add to, then select "File > Import".
+Navigate to your ``jisho`` formatted sqlite database and select the file.
+
+Notes
+`````
+
+It is actually required to restart anki between installing the plugin and importing words.
+The plugin needs to hook configuration that is only read at program launch.
+
+To import files, the extension must be ``*.jishodb``.
+Anki uses the file extension to select the importer to use, so it must match this exactly.
+
+The anki plugin is licensed under the AGPL to match the license of anki itself.
+The ``jisho`` CLI tool is itself licensed under the Boost Software License.
+
+
 Building
 --------
 
@@ -153,7 +194,8 @@ To do a release build (enable optimizations, strip symbols, etc.):
 Future Work
 -----------
 
-- automatic `anki <https://github.com/dae/anki>`__ deck integration with ``jish-word-grabber``
-- pacman package
+- improve anki plugin
+  - put anki plugin on ankiweb
+- scripted anki import/sync
 - brew package
 - windows installer

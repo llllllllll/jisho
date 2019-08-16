@@ -35,3 +35,9 @@ TAGS
 
 # manually add any files you need in here
 package/arch-linux/*
+
+# testing databases
+*.jishodb
+
+# the name of the anki addon
+jisho-sqlite-importer.ankiaddon
