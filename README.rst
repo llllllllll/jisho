@@ -136,19 +136,14 @@ Everything below the horizontal line only appears on the back of the card.
 Install
 ~~~~~~~
 
-To install the ``jisho`` anki plugin, run the following command from the repo root:
-
-.. code-block::
-
-   $ ./etc/zip-anki-plugin
-
-This will create a file called: ``jisho-sqlite-importer.ankiaddon``.
-Next, open the anki application and go to Tools > Add-ons.
-On the right side of the window, select "Install from file...".
-Navigate to the ``jisho`` repo root and select the ``jisho-sqlite-importer.ankiaddon`` file.
-Next, and this step cannot be skipped, restart anki.
-Finally, to add new cards, select the deck you want to add to, then select "File > Import".
-Navigate to your ``jisho`` formatted sqlite database and select the file.
+1. Run ``./etc/zip-anki-plugin`` from the repo root.
+   This will create a file called: ``jisho-sqlite-importer.ankiaddon``.
+2. Open the anki application and go to Tools > Add-ons.
+3. On the right side of the window, select "Install from file...".
+   Navigate to the ``jisho`` repo root and select the ``jisho-sqlite-importer.ankiaddon`` file.
+4. Restart anki.
+5. Import cards by selecting the deck you want to add to, then select "File > Import".
+6. Navigate to your ``jisho`` formatted sqlite database and select the file.
 
 Notes
 `````
