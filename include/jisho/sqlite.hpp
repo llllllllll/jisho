@@ -47,9 +47,9 @@ private:
 
 public:
     static int f(sqlite3_stmt* underlying, int col, const std::string& data) {
-        char* c_data = new char[data.size() + 1];
-        std::memcpy(c_data, data.data(), data.size() + 1);
-        return sqlite3_bind_text(underlying, col, c_data, data.size() + 1, delete_string);
+        char* c_data = new char[data.size()];
+        std::memcpy(c_data, data.data(), data.size());
+        return sqlite3_bind_text(underlying, col, c_data, data.size(), delete_string);
     }
 };
 
