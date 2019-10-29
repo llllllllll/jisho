@@ -37,6 +37,7 @@ int main(int argc, char** argv) {
         ("sqlite", po::value<std::string>(), "write the words to a sqlite database")
         ("no-stdout", "don't write the output to stdout")
         ("sqlite-db-init", po::value<std::string>(), "initialize a sqlite database")
+        ("threads", "query each word in a different thread")
         ;
     // clang-format on
 
@@ -69,12 +70,14 @@ int main(int argc, char** argv) {
         jisho::set_api_root(jisho_api);
     }
 
+    jisho::curl::global_init();
+
     std::vector<std::string> words;
     std::vector<std::optional<jisho::definition>> definitions;
 
     if (vm.count("word")) {
         words = vm["word"].as<std::vector<std::string>>();
-        definitions = jisho::fetch_batch(words);
+        definitions = jisho::fetch_batch(words, vm.count("threads"));
     }
 
     if (vm.count("sqlite-db-init")) {

@@ -4,6 +4,13 @@
 
 namespace jisho::curl {
 
+void global_init() {
+    if (curl_global_init(CURL_GLOBAL_ALL)) {
+        throw std::runtime_error{"failed to initialize curl"};
+    }
+}
+
+
 [[nodiscard]] owned_header_list set_headers(CURL* curl,
                                             const std::vector<header>& headers) {
     curl_slist* header_list = NULL;

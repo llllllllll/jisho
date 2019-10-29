@@ -10,7 +10,7 @@ std::shared_ptr<conn> conn::make(const std::string& filename) {
 }
 
 std::shared_ptr<stmt> conn::statement(const std::string_view& sql) {
-    if (sql.size() > std::numeric_limits<int>::max()) {
+    if (sql.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
         throw std::overflow_error{"sql statement size exceeds max int"};
     }
     const char* tail;

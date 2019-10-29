@@ -11,25 +11,35 @@
 
 namespace jisho::curl {
 
+/** Initialize the curl library. This function is not thread safe.
+ */
+void global_init();
+
 using header = std::pair<std::string_view, std::string_view>;
 using query_param = std::pair<std::string_view, std::string_view>;
 
 struct curl_string_deleter {
     void operator()(char* p) {
-        curl_free(p);
+        if (p) {
+            curl_free(p);
+        }
     }
 };
 using string = std::unique_ptr<char, curl_string_deleter>;
 
 struct curl_deleter {
     void operator()(CURL* ptr) {
-        curl_easy_cleanup(ptr);
+        if (ptr) {
+            curl_easy_cleanup(ptr);
+        }
     }
 };
 
 struct curl_slist_deleter {
     void operator()(curl_slist* ptr) {
-        curl_slist_free_all(ptr);
+        if (ptr) {
+            curl_slist_free_all(ptr);
+        }
     }
 };
 using owned_header_list = std::unique_ptr<curl_slist, curl_slist_deleter>;
@@ -51,10 +61,11 @@ private:
     std::unique_ptr<CURL, curl_deleter> m_curl;
 
 public:
-    session() : m_curl(curl_easy_init()) {
+    inline session() : m_curl(curl_easy_init()) {
         if (!m_curl) {
             throw error("Failed to initialize curl request.");
         }
+        curl_easy_setopt(m_curl.get(), CURLOPT_NOSIGNAL, 1);
     }
     /** Perform an HTTP GET request, returning the response as a `std::string`.
 
